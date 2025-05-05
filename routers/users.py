@@ -46,3 +46,13 @@ async def change_password(user: user_dependency, db: db_dependency, user_verific
     user_model.hash_password = bcrypt_context.hash(user_verification.new_password)
     db.add(user_model)
     db.commit()
+
+@router.delete('/deleteAccount', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(user: user_dependency, db: db_dependency):
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authenticated failed')
+    user_model = db.query(Users).filter(Users.id == user.get('id')).first()
+    if user_model is not None:
+        raise HTTPException(status_code=401, detail='Authenticated failed')
+    db.delete(user_model)
+    db.commit()

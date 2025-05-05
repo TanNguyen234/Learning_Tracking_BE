@@ -1,7 +1,6 @@
 import os
 from datetime import timedelta, datetime, timezone
 from typing import Annotated
-
 from sqlalchemy import DateTime
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -12,9 +11,9 @@ from passlib.context import CryptContext
 from starlette import status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
-
-SECRET_KEY = '3e7a4b1c9f02d85a6c3917b4e05f8d2c'
-ALGORITHM = 'HS256'
+from config import settings
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
