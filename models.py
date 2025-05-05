@@ -1,4 +1,3 @@
-from datetime import datetime
 from database import Base
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 
@@ -10,7 +9,7 @@ class Users(Base):
     username = Column(String, unique=True)
     password_hash = Column(String)
     role = Column(String)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime)
 
 class Skills(Base):
     __tablename__ = 'skills'
@@ -19,7 +18,7 @@ class Skills(Base):
     title = Column(String)
     description = Column(String)
     status = Column(String, default="in_progress")
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime)
 
 class StudyLogs(Base):
     __tablename__ = 'study_logs'
@@ -30,7 +29,7 @@ class StudyLogs(Base):
     end_time = Column(DateTime)
     duration = Column(Integer)
     note = Column(String)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime)
 
 class Goals(Base):
     __tablename__ = 'goals'
@@ -42,7 +41,7 @@ class Goals(Base):
     start_date = Column(DateTime)
     end_date = Column(DateTime)
     status = Column(String, default="in_progress") # in_progress / completed / failed
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime)
 
 class Notifications(Base):
     __tablename__ = 'notifications'
@@ -50,4 +49,4 @@ class Notifications(Base):
     user_id = Column(Integer, ForeignKey('users.id'))
     message = Column(String)
     is_read = Column(Boolean)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime)
