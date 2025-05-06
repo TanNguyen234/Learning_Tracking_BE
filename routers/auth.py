@@ -1,35 +1,23 @@
-import os
 from datetime import timedelta, datetime, timezone
 from typing import Annotated
-from sqlalchemy import DateTime
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException
-from database import SessionLocal
+from fastapi import Depends, HTTPException
+
+from helpers.sessionToDatabaseHelper import db_dependency, router
 from models import Users
 from passlib.context import CryptContext
 from starlette import status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
 from config import settings
+
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
-router = APIRouter(
-    prefix='/auth',
-    tags=['auth']
-)
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-db_dependency = Annotated[Session, Depends(get_db)]
+router = router('/auth', ['auth'])
 
 def authenticate_user(username: str, password: str, db):
     user = db.query(Users).filter(Users.username == username).first()
