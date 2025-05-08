@@ -21,8 +21,8 @@ class UserVerification(BaseModel):
 
 @router.get('/', status_code=status.HTTP_200_OK)
 async def get_user(user: user_dependency, db: db_dependency):
-    check_user_authentication(db, user)
-    return db.query(Users).filter(Users.id == user.get('id')).first()
+    user = check_user_authentication(db, user, return_user=True)
+    return user
 
 @router.put('/password', status_code=status.HTTP_204_NO_CONTENT)
 async def change_password(user: user_dependency, db: db_dependency, user_verification: UserVerification):

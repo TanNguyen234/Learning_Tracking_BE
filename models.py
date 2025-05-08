@@ -9,7 +9,6 @@ class Users(Base):
     username = Column(String, unique=True)
     password_hash = Column(String)
     role = Column(String)
-    token = Column(String)
     created_at = Column(DateTime)
 
 class Skills(Base):

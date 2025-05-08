@@ -8,7 +8,7 @@ from models import Users
 from passlib.context import CryptContext
 from starlette import status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from jose import jwt, JWTError
+from jose import jwt, JWTError, ExpiredSignatureError
 from config import settings
 
 SECRET_KEY = settings.SECRET_KEY
@@ -61,10 +61,12 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
         if username is None or user_id is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user.")
         return { 'username': username, 'id': user_id, 'user_role': user_role }
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired.")
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user.")
 
-def create_access_token(username: str, id: int, role: str, expires_delta: timedelta):
+def create_token(username: str, id: int, role: str, expires_delta: timedelta):
     encode = {'sub': username, 'id': id, 'role': role}
     expire = datetime.now(timezone.utc) + expires_delta
     encode.update({'exp': expire})
@@ -75,5 +77,27 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user.")
-    token = create_access_token(user.username, user.id, user.role, timedelta(minutes=30))
-    return {"access_token": token, "token_type": "bearer"}
+    access_token = create_token(user.username, user.id, user.role, timedelta(minutes=30))
+    refresh_token = create_token(user.username, user.id, user.role, timedelta(days=30))
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,  # thêm dòng này
+        "token_type": "bearer"
+    }
+
+@router.post("/refresh", response_model=Token)
+async def refresh_access_token(refresh_token: str):
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        user_id = payload.get("id")
+        user_role = payload.get("role")
+        new_access_token = create_token(username, user_id, user_role, timedelta(minutes=30))
+        return {
+            "access_token": new_access_token,
+            "token_type": "bearer"
+        }
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Refresh token expired.")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token.")
