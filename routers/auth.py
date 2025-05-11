@@ -38,6 +38,9 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class FullToken(Token):
+    refresh_token: str
+
 @router.post('/', status_code=status.HTTP_201_CREATED)
 async def create_user(db: db_dependency,create_user_req: CreateUserRequest):
     create_user_model = Users(
@@ -72,7 +75,7 @@ def create_token(username: str, id: int, role: str, expires_delta: timedelta):
     encode.update({'exp': expire})
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
-@router.post("/token", response_model=Token)
+@router.post("/token", response_model=FullToken)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],db: db_dependency,):
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
@@ -85,10 +88,13 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
         "token_type": "bearer"
     }
 
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
 @router.post("/refresh", response_model=Token)
-async def refresh_access_token(refresh_token: str):
+async def refresh_access_token(req: RefreshRequest):
     try:
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(req.refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
         user_id = payload.get("id")
         user_role = payload.get("role")
