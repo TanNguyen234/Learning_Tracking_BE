@@ -4,6 +4,8 @@ from fastapi import HTTPException, Path
 from pydantic import BaseModel, Field
 from starlette import status
 
+from typing import List
+from helpers.responseModel import SkillResponse
 from helpers.sessionToDatabaseHelper import db_dependency, router
 from helpers.userHelper import check_user_authentication
 from models import Skills
@@ -16,15 +18,15 @@ class SkillRequest(BaseModel):
     description: str = Field(min_length=3, max_length=100)
     status: str = Field(default="in_progress")
 
-@router.get('/', status_code=status.HTTP_200_OK)
+@router.get('/', status_code=status.HTTP_200_OK, response_model=List[SkillResponse])
 async def read_all_skill(user: user_dependency, db: db_dependency):
     check_user_authentication(db, user)
-    skill_model = db.query(Skills).filter(Skills.user_id == user.get('id')).first()
+    skill_model = db.query(Skills).filter(Skills.user_id == user.get('id')).all()
     if skill_model is None:
         raise HTTPException(status_code=404, detail='Skill not found')
     return skill_model
 
-@router.get('/{skill_id}', status_code=status.HTTP_200_OK)
+@router.get('/{skill_id}', status_code=status.HTTP_200_OK, response_model=SkillResponse)
 async def read_skill(user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
     check_user_authentication(db, user)
     skill_model = db.query(Skills).filter(Skills.id == skill_id and Skills.user_id == user.get('id')).first()

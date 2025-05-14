@@ -20,7 +20,9 @@ oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
 router = router('/auth', ['auth'])
 
 def authenticate_user(username: str, password: str, db):
+    print(username, password)
     user = db.query(Users).filter(Users.username == username).first()
+    print(user)
     if not user:
         return False
     if not bcrypt_context.verify(password, user.password_hash):
@@ -31,8 +33,6 @@ class CreateUserRequest(BaseModel):
     username: str
     email: str
     password: str
-    role: str
-    created_at: datetime
 
 class Token(BaseModel):
     access_token: str
@@ -47,13 +47,16 @@ async def create_user(db: db_dependency,create_user_req: CreateUserRequest):
         username=create_user_req.username,
         email=create_user_req.email,
         password_hash=bcrypt_context.hash(create_user_req.password),
-        role=create_user_req.role,
-        created_at=create_user_req.created_at
+        role='user',
+        created_at=datetime.now(timezone.utc)
     )
 
     db.add(create_user_model)
     db.commit()
-    return create_user_model
+    return {
+        "username": create_user_model.username,
+        "email": create_user_model.email
+    }
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
     try:
