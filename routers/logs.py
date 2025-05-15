@@ -16,8 +16,8 @@ class LogRequest(BaseModel):
     skill_id: int = Field(gt=0)
     start_time: datetime
     end_time: datetime
-    duration: int = Field(gt=0)
-    note: str = Field(min_length=0, max_length=200)
+    duration: int = Field(ge=0)
+    note: str = Field(min_length=0, max_length=5000)
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model=List[LogRequest])
 async def read_all_logs(user: user_dependency, db: db_dependency):
