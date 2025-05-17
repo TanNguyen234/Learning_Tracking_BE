@@ -57,7 +57,7 @@ async def create_log(user: user_dependency, db: db_dependency, log_request: LogR
 async def delete_log(user: user_dependency, db: db_dependency, log_id: int = Path(gt=0)):
     check_user_authentication(db, user)
 
-    log_model = db.query(StudyLogs).filter(StudyLogs.id == StudyLogs, StudyLogs.user_id == user.get('id')).first()
+    log_model = db.query(StudyLogs).filter(StudyLogs.id == log_id, StudyLogs.user_id == user.get('id')).first()
 
     if log_model is None:
         raise HTTPException(status_code=404, detail='Skill not found')

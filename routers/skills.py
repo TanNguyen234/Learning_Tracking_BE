@@ -16,7 +16,7 @@ router = router('/skills', ['skills'])
 class SkillRequest(BaseModel):
     title: str = Field(min_length=3)
     description: str = Field(min_length=3, max_length=100)
-    status: str = Field(default="in_progress")
+    status: str = Field(default="Learning")
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model=List[SkillResponse])
 async def read_all_skill(user: user_dependency, db: db_dependency):
@@ -29,7 +29,7 @@ async def read_all_skill(user: user_dependency, db: db_dependency):
 @router.get('/{skill_id}', status_code=status.HTTP_200_OK, response_model=SkillResponse)
 async def read_skill(user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
     check_user_authentication(db, user)
-    skill_model = db.query(Skills).filter(Skills.id == skill_id and Skills.user_id == user.get('id')).first()
+    skill_model = db.query(Skills).filter(Skills.id == skill_id, Skills.user_id == user.get('id')).first()
 
     if skill_model is None:
         raise HTTPException(status_code=404, detail='Skill not found')

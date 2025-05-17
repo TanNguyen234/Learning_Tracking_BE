@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import List
 
 class SkillResponse(BaseModel):
     id: int
@@ -21,3 +22,18 @@ class LogResponse(BaseModel):
     duration: int
     note: str
     created_at: datetime
+
+class ChartItem(BaseModel):
+    date: datetime
+    hours: float
+
+class SkillPieItem(BaseModel):
+    type: str  # Tên kỹ năng
+    value: float  # Tổng số giờ học cho kỹ năng đó
+
+class StatsResponse(BaseModel):
+    totalHours: float
+    totalSkills: int
+    totalLogs: int
+    chartData: List[ChartItem]
+    skillPieData: List[SkillPieItem]
