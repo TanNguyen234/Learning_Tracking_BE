@@ -2,6 +2,13 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import List
 
+class PaginationMeta(BaseModel):
+    current_page: int
+    limit: int
+    offset: int
+    total_pages: int
+    total_items: int
+
 class SkillResponse(BaseModel):
     id: int
     title: str
@@ -12,6 +19,10 @@ class SkillResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+class SkillListResponse(BaseModel):
+    data: List[SkillResponse]
+    pagination: PaginationMeta
 
 class LogResponse(BaseModel):
     id: int

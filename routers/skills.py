@@ -1,11 +1,14 @@
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, Path
+from fastapi.params import Query
 from pydantic import BaseModel, Field
 from starlette import status
 
 from typing import List
-from helpers.responseModel import SkillResponse
+
+from helpers.pagination import paginate
+from helpers.responseModel import SkillResponse, SkillListResponse
 from helpers.sessionToDatabaseHelper import db_dependency, router
 from helpers.userHelper import check_user_authentication
 from models import Skills
@@ -18,13 +21,29 @@ class SkillRequest(BaseModel):
     description: str = Field(min_length=3, max_length=100)
     status: str = Field(default="Learning")
 
-@router.get('/', status_code=status.HTTP_200_OK, response_model=List[SkillResponse])
-async def read_all_skill(user: user_dependency, db: db_dependency):
+@router.get('/', status_code=status.HTTP_200_OK, response_model=SkillListResponse)
+async def read_all_skill(
+        user: user_dependency,
+        db: db_dependency,
+        current_page: int = Query(1, ge=1),
+        limit: int = Query(10, ge=1)
+):
     check_user_authentication(db, user)
-    skill_model = db.query(Skills).filter(Skills.user_id == user.get('id')).all()
-    if skill_model is None:
+
+    skills = db.query(Skills).filter(Skills.user_id == user.get('id')).all()
+
+    if len(skills) == 0:
         raise HTTPException(status_code=404, detail='Skill not found')
-    return skill_model
+
+    pagination_info = paginate(current_page, limit, len(skills))
+
+    paginated_skills = skills[pagination_info["offset"]: pagination_info["offset"] + limit]
+
+    return {
+        "data": paginated_skills,
+        "pagination": pagination_info
+    }
+
 
 @router.get('/{skill_id}', status_code=status.HTTP_200_OK, response_model=SkillResponse)
 async def read_skill(user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
