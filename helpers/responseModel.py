@@ -28,6 +28,7 @@ class LogResponse(BaseModel):
     id: int
     user_id: int
     skill_id: int
+    skill_name: str
     start_time: datetime
     end_time: datetime
     duration: int

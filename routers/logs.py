@@ -27,12 +27,37 @@ async def read_all_logs(user: user_dependency, db: db_dependency):
         raise HTTPException(status_code=404, detail="No skills found")
 
     skill_ids = [s.id for s in skills]
-    logs = db.query(StudyLogs).filter(StudyLogs.skill_id.in_(skill_ids)).all()
+    logs_with_skills = (
+        db.query(
+            StudyLogs,
+            Skills.title.label("skill_name")
+        )
+        .join(Skills, StudyLogs.skill_id == Skills.id)
+        .filter(StudyLogs.skill_id.in_(skill_ids))
+        .all()
+    )
 
-    if not logs:
+    if not logs_with_skills:
         raise HTTPException(status_code=404, detail="No logs found")
 
-    return logs
+        # logs_with_skills là list of tuples (StudyLogs, skill_name)
+        # map thành dict phù hợp response model
+    result = []
+    for log, skill_name in logs_with_skills:
+        log_data = {
+            "id": log.id,
+            "user_id": log.user_id,
+            "skill_id": log.skill_id,
+            "skill_name": skill_name,
+            "start_time": log.start_time,
+            "end_time": log.end_time,
+            "duration": log.duration,
+            "note": log.note,
+            "created_at": log.created_at,
+        }
+        result.append(log_data)
+
+    return result
 
 @router.get('/{skill_id}', status_code=status.HTTP_200_OK, response_model=List[LogRequest])
 async def read_log(user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
