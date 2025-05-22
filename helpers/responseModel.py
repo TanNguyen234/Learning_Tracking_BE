@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List
 
@@ -17,8 +17,8 @@ class SkillResponse(BaseModel):
     user_id: int
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class SkillListResponse(BaseModel):
     data: List[SkillResponse]

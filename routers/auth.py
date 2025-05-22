@@ -20,9 +20,7 @@ oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
 router = router('/auth', ['auth'])
 
 def authenticate_user(username: str, password: str, db):
-    print(username, password)
     user = db.query(Users).filter(Users.username == username).first()
-    print(user)
     if not user:
         return False
     if not bcrypt_context.verify(password, user.password_hash):
