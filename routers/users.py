@@ -27,11 +27,10 @@ async def get_user(user: user_dependency, db: db_dependency):
 @router.put('/password', status_code=status.HTTP_204_NO_CONTENT)
 async def change_password(user: user_dependency, db: db_dependency, user_verification: UserVerification):
     user_model = check_user_authentication(db, user, return_user=True)
-
     if not bcrypt_context.verify(user_verification.password, user_model.password_hash):
         raise HTTPException(status_code=401, detail='Authenticated failed')
 
-    user_model.hash_password = bcrypt_context.hash(user_verification.new_password)
+    user_model.password_hash = bcrypt_context.hash(user_verification.new_password)
     db.add(user_model)
     db.commit()
 
