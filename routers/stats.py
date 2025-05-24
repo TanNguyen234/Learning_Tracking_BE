@@ -1,7 +1,8 @@
 from collections import defaultdict
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from starlette import status
 
+from helpers.limiter import limiter
 from helpers.responseModel import StatsResponse
 from helpers.sessionToDatabaseHelper import db_dependency, router
 from helpers.userHelper import check_user_authentication
@@ -12,7 +13,7 @@ router = router('/stats', ['stats'])
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model=StatsResponse)
 @limiter.limit("10/minute")
-async def read_stats(user: user_dependency, db: db_dependency):
+async def read_stats(request: Request, user: user_dependency, db: db_dependency):
     check_user_authentication(db, user)
 
     skills = db.query(Skills).filter(Skills.user_id == user.get("id")).all()

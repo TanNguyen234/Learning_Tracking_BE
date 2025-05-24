@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import HTTPException, Path
+from fastapi import HTTPException, Path, Request
 from fastapi.params import Query
 from pydantic import BaseModel, Field
 from starlette import status
@@ -23,6 +23,7 @@ class SkillRequest(BaseModel):
 @router.get('/', status_code=status.HTTP_200_OK, response_model=SkillListResponse)
 @limiter.limit("30/minute")
 async def read_all_skill(
+        request: Request,
         user: user_dependency,
         db: db_dependency,
         current_page: int = Query(1, ge=1),
@@ -46,7 +47,7 @@ async def read_all_skill(
 
 @router.get('/{skill_id}', status_code=status.HTTP_200_OK, response_model=SkillResponse)
 @limiter.limit("30/minute")
-async def read_skill(user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
+async def read_skill(request: Request, user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
     check_user_authentication(db, user)
     skill_model = db.query(Skills).filter(Skills.id == skill_id, Skills.user_id == user.get('id')).first()
 
@@ -57,7 +58,7 @@ async def read_skill(user: user_dependency, db: db_dependency, skill_id: int = P
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/minute")
-async def create_skill(user: user_dependency, db: db_dependency, skill_request: SkillRequest):
+async def create_skill(request: Request, user: user_dependency, db: db_dependency, skill_request: SkillRequest):
     check_user_authentication(db, user)
 
     skill_model = Skills(**skill_request.model_dump(), user_id=user.get('id'), created_at=datetime.now(timezone.utc))
@@ -67,7 +68,7 @@ async def create_skill(user: user_dependency, db: db_dependency, skill_request: 
 
 @router.delete('/delete/{skill_id}', status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("10/minute")
-async def delete_skill(user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
+async def delete_skill(request: Request, user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
     check_user_authentication(db, user)
 
     skill_model = db.query(Skills).filter(Skills.id == skill_id and Skills.user_id == user.get('id')).first()
@@ -80,7 +81,7 @@ async def delete_skill(user: user_dependency, db: db_dependency, skill_id: int =
 
 @router.patch("/update/{skill_id}", status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("10/minute")
-async def update_skill(user: user_dependency, db: db_dependency, skill_request: SkillRequest, skill_id: int = Path(gt=0)):
+async def update_skill(request: Request, user: user_dependency, db: db_dependency, skill_request: SkillRequest, skill_id: int = Path(gt=0)):
     check_user_authentication(db, user)
 
     skill = db.query(Skills).filter(Skills.id == skill_id, Skills.user_id == user.get('id')).first()

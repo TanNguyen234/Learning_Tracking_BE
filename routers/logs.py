@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import List
 
-from fastapi import HTTPException, Path
+from fastapi import HTTPException, Path, Request
 from pydantic import BaseModel, Field
 from starlette import status
 
@@ -22,7 +22,7 @@ class LogRequest(BaseModel):
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model=List[LogRequest])
 @limiter.limit("5/minute")
-async def read_all_logs(user: user_dependency, db: db_dependency):
+async def read_all_logs(request: Request, user: user_dependency, db: db_dependency):
     check_user_authentication(db, user)
     skills = db.query(Skills).filter(Skills.user_id == user.get("id")).all()
     if not skills:
@@ -60,7 +60,7 @@ async def read_all_logs(user: user_dependency, db: db_dependency):
     return result
 
 @router.get('/{skill_id}', status_code=status.HTTP_200_OK, response_model=List[LogRequest])
-async def read_log(user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
+async def read_log(request: Request, user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
     check_user_authentication(db, user)
     log_model = db.query(StudyLogs).filter(StudyLogs.skill_id == skill_id, StudyLogs.user_id == user.get('id')).all()
 
@@ -71,7 +71,7 @@ async def read_log(user: user_dependency, db: db_dependency, skill_id: int = Pat
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
-async def create_log(user: user_dependency, db: db_dependency, log_request: LogRequest):
+async def create_log(request: Request, user: user_dependency, db: db_dependency, log_request: LogRequest):
     check_user_authentication(db, user)
 
     log_model = StudyLogs(**log_request.model_dump(), user_id=user.get('id'), created_at=datetime.now(timezone.utc))
@@ -81,7 +81,7 @@ async def create_log(user: user_dependency, db: db_dependency, log_request: LogR
 
 @router.delete('/delete/{log_id}', status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("5/minute")
-async def delete_log(user: user_dependency, db: db_dependency, log_id: int = Path(gt=0)):
+async def delete_log(request: Request, user: user_dependency, db: db_dependency, log_id: int = Path(gt=0)):
     check_user_authentication(db, user)
 
     log_model = db.query(StudyLogs).filter(StudyLogs.id == log_id, StudyLogs.user_id == user.get('id')).first()
@@ -94,7 +94,7 @@ async def delete_log(user: user_dependency, db: db_dependency, log_id: int = Pat
 
 @router.patch("/update/{skill_id}", status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("5/minute")
-async def update_log(user: user_dependency, db: db_dependency, log_request: LogRequest, log_id: int = Path(gt=0)):
+async def update_log(request: Request, user: user_dependency, db: db_dependency, log_request: LogRequest, log_id: int = Path(gt=0)):
     check_user_authentication(db, user)
 
     log = db.query(StudyLogs).filter(StudyLogs.id == log_id, StudyLogs.user_id == user.get('id')).first()
