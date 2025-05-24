@@ -3,8 +3,8 @@ from fastapi import Depends, HTTPException
 from starlette import status
 from pydantic import BaseModel, Field
 
+from helpers.limiter import limiter
 from helpers.userHelper import check_user_authentication
-from models import Users
 from .auth import get_current_user
 from passlib.context import CryptContext
 
@@ -20,11 +20,13 @@ class UserVerification(BaseModel):
     new_password: str = Field(min_length=8, max_length=128)
 
 @router.get('/', status_code=status.HTTP_200_OK)
+@limiter.limit("30/minute")
 async def get_user(user: user_dependency, db: db_dependency):
     user = check_user_authentication(db, user, return_user=True)
     return user
 
 @router.put('/password', status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/minute")
 async def change_password(user: user_dependency, db: db_dependency, user_verification: UserVerification):
     user_model = check_user_authentication(db, user, return_user=True)
     if not bcrypt_context.verify(user_verification.password, user_model.password_hash):

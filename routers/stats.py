@@ -11,6 +11,7 @@ from .users import user_dependency
 router = router('/stats', ['stats'])
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model=StatsResponse)
+@limiter.limit("10/minute")
 async def read_stats(user: user_dependency, db: db_dependency):
     check_user_authentication(db, user)
 

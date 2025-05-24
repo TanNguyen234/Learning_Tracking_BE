@@ -3,6 +3,7 @@ from typing import Annotated
 from pydantic import BaseModel
 from fastapi import Depends, HTTPException
 
+from helpers.limiter import limiter
 from helpers.sessionToDatabaseHelper import db_dependency, router
 from models import Users
 from passlib.context import CryptContext
@@ -40,6 +41,7 @@ class FullToken(Token):
     refresh_token: str
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
+@limiter.limit("3/minute")
 async def create_user(db: db_dependency,create_user_req: CreateUserRequest):
     create_user_model = Users(
         username=create_user_req.username,
@@ -77,6 +79,7 @@ def create_token(username: str, id: int, role: str, expires_delta: timedelta):
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 @router.post("/token", response_model=FullToken)
+@limiter.limit("5/minute")
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],db: db_dependency,):
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
@@ -93,6 +96,7 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 @router.post("/refresh", response_model=Token)
+@limiter.limit("10/minute")
 async def refresh_access_token(req: RefreshRequest):
     try:
         payload = jwt.decode(req.refresh_token, SECRET_KEY, algorithms=[ALGORITHM])

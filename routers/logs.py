@@ -5,6 +5,7 @@ from fastapi import HTTPException, Path
 from pydantic import BaseModel, Field
 from starlette import status
 
+from helpers.limiter import limiter
 from helpers.sessionToDatabaseHelper import db_dependency, router
 from helpers.userHelper import check_user_authentication
 from models import StudyLogs, Skills
@@ -20,6 +21,7 @@ class LogRequest(BaseModel):
     note: str = Field(min_length=0, max_length=5000)
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model=List[LogRequest])
+@limiter.limit("5/minute")
 async def read_all_logs(user: user_dependency, db: db_dependency):
     check_user_authentication(db, user)
     skills = db.query(Skills).filter(Skills.user_id == user.get("id")).all()
@@ -40,8 +42,6 @@ async def read_all_logs(user: user_dependency, db: db_dependency):
     if not logs_with_skills:
         raise HTTPException(status_code=404, detail="No logs found")
 
-        # logs_with_skills là list of tuples (StudyLogs, skill_name)
-        # map thành dict phù hợp response model
     result = []
     for log, skill_name in logs_with_skills:
         log_data = {
@@ -64,12 +64,13 @@ async def read_log(user: user_dependency, db: db_dependency, skill_id: int = Pat
     check_user_authentication(db, user)
     log_model = db.query(StudyLogs).filter(StudyLogs.skill_id == skill_id, StudyLogs.user_id == user.get('id')).all()
 
-    if log_model is None:
+    if not log_model:
         raise HTTPException(status_code=404, detail='No log found')
 
     return log_model
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
 async def create_log(user: user_dependency, db: db_dependency, log_request: LogRequest):
     check_user_authentication(db, user)
 
@@ -79,24 +80,26 @@ async def create_log(user: user_dependency, db: db_dependency, log_request: LogR
     db.commit()
 
 @router.delete('/delete/{log_id}', status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/minute")
 async def delete_log(user: user_dependency, db: db_dependency, log_id: int = Path(gt=0)):
     check_user_authentication(db, user)
 
     log_model = db.query(StudyLogs).filter(StudyLogs.id == log_id, StudyLogs.user_id == user.get('id')).first()
 
     if log_model is None:
-        raise HTTPException(status_code=404, detail='Skill not found')
+        raise HTTPException(status_code=404, detail='Log not found')
 
     db.query(StudyLogs).filter(StudyLogs.id == log_id).filter(StudyLogs.user_id == user.get('id')).delete()
     db.commit()
 
 @router.patch("/update/{skill_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def update_log(user: user_dependency, db: db_dependency, log_request: LogRequest, skill_id: int = Path(gt=0)):
+@limiter.limit("5/minute")
+async def update_log(user: user_dependency, db: db_dependency, log_request: LogRequest, log_id: int = Path(gt=0)):
     check_user_authentication(db, user)
 
-    log = db.query(StudyLogs).filter(StudyLogs.id == skill_id, StudyLogs.user_id == user.get('id')).first()
+    log = db.query(StudyLogs).filter(StudyLogs.id == log_id, StudyLogs.user_id == user.get('id')).first()
     if not log:
-        raise HTTPException(status_code=404, detail="Skill not found")
+        raise HTTPException(status_code=404, detail="Log not found")
 
     for key, value in log_request.model_dump(exclude_unset=True).items():
         setattr(log, key, value)

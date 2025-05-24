@@ -5,8 +5,7 @@ from fastapi.params import Query
 from pydantic import BaseModel, Field
 from starlette import status
 
-from typing import List
-
+from helpers.limiter import limiter
 from helpers.pagination import paginate
 from helpers.responseModel import SkillResponse, SkillListResponse
 from helpers.sessionToDatabaseHelper import db_dependency, router
@@ -22,6 +21,7 @@ class SkillRequest(BaseModel):
     status: str = Field(default="Learning")
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model=SkillListResponse)
+@limiter.limit("30/minute")
 async def read_all_skill(
         user: user_dependency,
         db: db_dependency,
@@ -45,6 +45,7 @@ async def read_all_skill(
     }
 
 @router.get('/{skill_id}', status_code=status.HTTP_200_OK, response_model=SkillResponse)
+@limiter.limit("30/minute")
 async def read_skill(user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
     check_user_authentication(db, user)
     skill_model = db.query(Skills).filter(Skills.id == skill_id, Skills.user_id == user.get('id')).first()
@@ -55,6 +56,7 @@ async def read_skill(user: user_dependency, db: db_dependency, skill_id: int = P
     return skill_model
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_skill(user: user_dependency, db: db_dependency, skill_request: SkillRequest):
     check_user_authentication(db, user)
 
@@ -64,6 +66,7 @@ async def create_skill(user: user_dependency, db: db_dependency, skill_request: 
     db.commit()
 
 @router.delete('/delete/{skill_id}', status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def delete_skill(user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
     check_user_authentication(db, user)
 
@@ -76,6 +79,7 @@ async def delete_skill(user: user_dependency, db: db_dependency, skill_id: int =
     db.commit()
 
 @router.patch("/update/{skill_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def update_skill(user: user_dependency, db: db_dependency, skill_request: SkillRequest, skill_id: int = Path(gt=0)):
     check_user_authentication(db, user)
 
