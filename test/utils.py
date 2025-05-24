@@ -34,21 +34,6 @@ def override_get_current_user():
     return { "username": 'foxy', 'id': 1, 'role': 'admin'}
 
 @pytest.fixture
-def test_todo():
-    todo = Skills(
-        title="Artificial Intelligence",
-        description="To understand the potential",
-        status="Learning"
-    )
-    db = TestingSessionLocal()
-    db.add(todo)
-    db.commit()
-    yield todo                                        #tất cả skill sẽ được xóa sao sao khi hết phiên
-    with engine.connect() as connection:
-        connection.execute(text("DELETE FROM skills;"))
-        connection.commit()
-
-@pytest.fixture
 def test_user():
     user = Users(
         username="foxy",
@@ -63,4 +48,22 @@ def test_user():
     yield user  # tất cả users sẽ được xóa sao sao khi hết phiên
     with engine.connect() as connection:
         connection.execute(text("DELETE FROM users;"))
+        connection.commit()
+
+
+@pytest.fixture
+def test_skill(test_user):
+    skill = Skills(
+        title="Learn FastAPI",
+        description="Mastering FastAPI step by step",
+        status="Learning",
+        user_id=test_user.id,
+        created_at=datetime.now(timezone.utc)
+    )
+    db = TestingSessionLocal()
+    db.add(skill)
+    db.commit()
+    yield skill                                        #tất cả skill sẽ được xóa sao sao khi hết phiên
+    with engine.connect() as connection:
+        connection.execute(text("DELETE FROM skills;"))
         connection.commit()

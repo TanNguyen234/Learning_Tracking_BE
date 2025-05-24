@@ -44,7 +44,6 @@ async def read_all_skill(
         "pagination": pagination_info
     }
 
-
 @router.get('/{skill_id}', status_code=status.HTTP_200_OK, response_model=SkillResponse)
 async def read_skill(user: user_dependency, db: db_dependency, skill_id: int = Path(gt=0)):
     check_user_authentication(db, user)

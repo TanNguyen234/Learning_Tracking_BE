@@ -33,9 +33,3 @@ async def change_password(user: user_dependency, db: db_dependency, user_verific
     user_model.password_hash = bcrypt_context.hash(user_verification.new_password)
     db.add(user_model)
     db.commit()
-
-@router.delete('/deleteAccount', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user: user_dependency, db: db_dependency):
-    check_user_authentication(db, user)
-    db.query(Users).filter(Users.id == user.get('id'))
-    db.commit()
