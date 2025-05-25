@@ -14,11 +14,11 @@ from .users import user_dependency
 router = router('/logs', ['logs'])
 
 class LogRequest(BaseModel):
-    skill_id: int = Field(gt=0)
-    start_time: datetime
-    end_time: datetime
-    duration: int = Field(ge=0)
-    note: str = Field(min_length=0, max_length=5000)
+    skill_id: int = Field(ge=0)
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+    duration: int | None = None
+    note: str | None = None
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model=List[LogRequest])
 @limiter.limit("5/minute")
@@ -80,7 +80,7 @@ async def create_log(request: Request, user: user_dependency, db: db_dependency,
     db.commit()
 
 @router.delete('/delete/{log_id}', status_code=status.HTTP_204_NO_CONTENT)
-@limiter.limit("5/minute")
+@limiter.limit("10/minute")
 async def delete_log(request: Request, user: user_dependency, db: db_dependency, log_id: int = Path(gt=0)):
     check_user_authentication(db, user)
 
@@ -92,11 +92,11 @@ async def delete_log(request: Request, user: user_dependency, db: db_dependency,
     db.query(StudyLogs).filter(StudyLogs.id == log_id).filter(StudyLogs.user_id == user.get('id')).delete()
     db.commit()
 
-@router.patch("/update/{skill_id}", status_code=status.HTTP_204_NO_CONTENT)
-@limiter.limit("5/minute")
+@router.patch("/update/{log_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def update_log(request: Request, user: user_dependency, db: db_dependency, log_request: LogRequest, log_id: int = Path(gt=0)):
     check_user_authentication(db, user)
-
+    print(log_request, log_id)
     log = db.query(StudyLogs).filter(StudyLogs.id == log_id, StudyLogs.user_id == user.get('id')).first()
     if not log:
         raise HTTPException(status_code=404, detail="Log not found")

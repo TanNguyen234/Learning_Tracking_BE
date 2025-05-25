@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from main import app
-from models import Skills, Users
+from models import Skills, Users, StudyLogs
 from routers.users import bcrypt_context
 
 SQLALCHEMY_DATABASE_URL = 'sqlite:///./testdb.db'
@@ -66,4 +66,23 @@ def test_skill(test_user):
     yield skill                                        #tất cả skill sẽ được xóa sao sao khi hết phiên
     with engine.connect() as connection:
         connection.execute(text("DELETE FROM skills;"))
+        connection.commit()
+
+@pytest.fixture
+def test_log(test_user, test_skill):
+    log = StudyLogs(
+        user_id=test_user.id,
+        skill_id=test_skill.id,
+        start_time=datetime.now(timezone.utc),
+        end_time=datetime.now(timezone.utc),
+        duration=0,
+        note="Success will never be easy",
+        created_at=datetime.now(timezone.utc)
+    )
+    db = TestingSessionLocal()
+    db.add(log)
+    db.commit()
+    yield log                                        #tất cả skill sẽ được xóa sao sao khi hết phiên
+    with engine.connect() as connection:
+        connection.execute(text("DELETE FROM study_logs;"))
         connection.commit()

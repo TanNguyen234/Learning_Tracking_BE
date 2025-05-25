@@ -1,4 +1,3 @@
-import pytest
 from fastapi import status
 from helpers.sessionToDatabaseHelper import get_db
 from routers.users import get_current_user
